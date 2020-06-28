@@ -1,0 +1,25 @@
+{
+	"name": "client",
+	"displayName": "Sample Client",
+	"description": "Sample client into VS Code.",
+	"version": "0.0.1",
+	"private": true,
+	"author": "{Your name}",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "http://hoge"
+	},
+	"bugs": {
+		"url": "http://hoge/issues"
+	},
+	"engines": {
+		"vscode": "^1.43.0"
+	},
+	"devDependencies": {
+		"@types/vscode": "1.43.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "6.1.3"
+	}
+}
