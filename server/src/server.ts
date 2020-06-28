@@ -1,13 +1,13 @@
 "use strict";
 
+import coding_rules = require('./coding_rules');
+
 import {
 	CodeAction,
 	CodeActionKind,
 	createConnection,
 	Diagnostic,
-	DiagnosticSeverity,
 	ProposedFeatures,
-	Range,
 	TextDocuments,
 	TextDocumentEdit,
 	TextDocumentSyncKind,
@@ -31,6 +31,7 @@ let documents!: TextDocuments<TextDocument>;
 connection.onInitialize(() => {
 	documents = new TextDocuments(TextDocument);
 	setupDocumentsListeners();
+	setupConnectionAction();
 
 	return {
 		capabilities: {
@@ -52,45 +53,9 @@ connection.onInitialize(() => {
 	};
 });
 
-/**
- * Analyzes the text document for problems.
- * @param doc text document to analyze
- */
-function validate(doc: TextDocument) {
-	/*
+function set_warning(doc: TextDocument) {
 	const diagnostics: Diagnostic[] = [];
-	const range: Range = {start: {line: 0, character: 0},
-						  end: {line: 0, character: Number.MAX_VALUE}};
-	diagnostics.push(Diagnostic.create(range, "Hello world", DiagnosticSeverity.Warning, "", "sample"));
-	connection.sendDiagnostics({ uri: doc.uri, diagnostics });
-	*/
-
-	// ２つ以上並んでいるアルファベット大文字を検出
-	const text = doc.getText();
-	// 検出するための正規表現 (正規表現テスト: https://regex101.com/r/wXZbr9/1)
-	const pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
-
-	// 警告などの状態を管理するリスト
-	const diagnostics: Diagnostic[] = [];
-	// 正規表現に引っかかった文字列すべてを対象にする
-	while ((m = pattern.exec(text)) !== null) {
-		// 対象の位置から正規表現に引っかかった文字列までを対象にする
-		const range: Range = {start: doc.positionAt(m.index),
-							  end: doc.positionAt(m.index + m[0].length),
-		};
-		// 警告内容を作成，上から範囲，メッセージ，重要度，ID，警告原因
-		const diagnostic: Diagnostic = Diagnostic.create(
-			range,
-			`${m[0]} is all uppercase.`,
-			DiagnosticSeverity.Warning,
-			"",
-			"sample",
-		);
-		// 警告リストに警告内容を追加
-		diagnostics.push(diagnostic);
-	}
-
+	coding_rules.validate(doc, diagnostics);
 	// Send the computed diagnostics to VSCode.
 	connection.sendDiagnostics({ uri: doc.uri, diagnostics });
 }
@@ -101,7 +66,7 @@ function setupDocumentsListeners() {
 	let debug_onDonDidOpen = 0;
 	// ドキュメントを開いたとき？
 	documents.onDidOpen((event) => {
-		validate(event.document);
+		set_warning(event.document);
 
 		//connection.console.log('onDidOpen');
 		console.log(`server: onDidOpen(${debug_onDonDidOpen})`);
@@ -111,16 +76,37 @@ function setupDocumentsListeners() {
 	let debug_onDidChangeContent = 0;
 	// ドキュメントが変更されたとき
 	documents.onDidChangeContent((change) => {
-		validate(change.document);
+		set_warning(change.document);
 
 		//connection.console.log('onDidChangeContent');
 		console.log(`server: onDidChangeContent(${debug_onDidChangeContent})`);
 		debug_onDidChangeContent++;
 	});
 
+	let debug_onDidClose = 0;
 	documents.onDidClose((close) => {
 		connection.sendDiagnostics({ uri: close.document.uri, diagnostics: []});
+
+		//connection.console.log('onDidClose');
+		console.log(`server: onDidClose(${debug_onDidClose})`);
+		debug_onDidChangeContent++;
 	});
+
+	// ファイルを保存しようと(?)したとき
+	documents.onWillSave((event) => {
+		event.document;
+
+		console.log(`server: onWillSave()`);
+	});
+	// ファイルを保存したとき
+	documents.onDidSave((event) => {
+		event.document;
+
+		console.log(`server: onDidSave()`);
+	});
+}
+
+function setupConnectionAction() {
 
 	// Code Actionを追加する
 	connection.onCodeAction((params) => {
@@ -156,13 +142,13 @@ function setupDocumentsListeners() {
 		return codeActions;
 	});
 
-
-
+	let debug_onDidChangeWatchedFiles = 0;
 	connection.onDidChangeWatchedFiles(_change => {
 		// Monitored files have change in VSCode
 		connection.console.log('We received an file change event');
+		console.log(`server: onDidChangeWatchedFiles(${debug_onDidChangeWatchedFiles})`);
 	});
-	
+
 }
 
 console.log("server: start!!");

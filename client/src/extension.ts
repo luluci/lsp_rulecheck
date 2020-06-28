@@ -57,6 +57,10 @@ export function activate(context: ExtensionContext): void {
 		documentSelector: [
 			{
 				scheme: "file",
+				language: "c",
+			},
+			{
+				scheme: "file",
 				language: "plaintext",
 			},
 			{
